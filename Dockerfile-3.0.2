@@ -1,0 +1,33 @@
+FROM python:2.7
+ 
+RUN apt-get update \
+    && apt-get -y install vim wget make autoconf automake build-essential libass-dev libfreetype6-dev \
+        libsdl2-dev libtheora-dev libtool libva-dev libvdpau-dev libvorbis-dev libxcb1-dev libxcb-shm0-dev \
+        libxcb-xfixes0-dev pkg-config texinfo zlib1g-dev yasm libx264-dev                                                                                                         
+ 
+ARG FFMPEG_HOME=/usr/local
+ARG PATH="$FFMPEG_HOME/bin:$PATH"
+ARG PKG_CONFIG_PATH="$FFMPEG_HOME/lib/pkgconfig"
+ 
+# orbit: 3.0.2 
+RUN cd ~ && mkdir -p package/ffmpeg_sources && cd package/ffmpeg_sources \
+    && wget -q https://ffmpeg.org/releases/ffmpeg-3.0.2.tar.gz \
+    && tar zxvf ./ffmpeg-3.0.2.tar.gz \
+    && cd ffmpeg-3.0.2 \
+    && ./configure \
+        --prefix="$FFMPEG_HOME" \
+        --pkg-config-flags="--static" \
+        --extra-cflags="-I$FFMPEG_HOME/include" \
+        --extra-ldflags="-L$FFMPEG_HOME/lib" \
+        --bindir="$FFMPEG_HOME/bin" \
+        --enable-gpl \
+        --enable-libx264 \
+        --enable-pic \
+        --enable-shared \
+    && make -j $(nproc) install \
+    && rm -rf ~/package/ffmpeg_sources \
+    && ldconfig
+ 
+RUN mkdir -p /tmp/vds3_ffmpeg_img
+WORKDIR /opt/patchimg
+
